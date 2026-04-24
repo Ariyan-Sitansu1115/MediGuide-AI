@@ -350,10 +350,12 @@ deleteBtn && deleteBtn.addEventListener("click", async () => {
       localStorage.removeItem(CONSENT_KEY);
       localStorage.removeItem(SESSION_KEY);
       if (privacyOut) {
-        privacyOut.textContent = "✅ All data deleted. Reloading…";
+        privacyOut.innerHTML =
+          "✅ All data deleted. " +
+          "<button id='reloadBtn' class='btn-secondary' style='margin-left:.5rem'>Reload</button>";
         privacyOut.style.display = "block";
+        document.getElementById("reloadBtn").addEventListener("click", () => location.reload());
       }
-      setTimeout(() => location.reload(), 1500);
     }
   } catch (err) {
     alert("Deletion failed: " + err.message);

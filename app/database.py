@@ -3,7 +3,7 @@ Database models and utilities for MediGuide AI.
 
 Provides SQLite-backed persistence for consent records, symptom submissions,
 and audit logs.  Sensitive fields are encrypted at rest using Fernet
-(AES-128-CBC + HMAC-SHA256) from the `cryptography` package.
+(AES-CBC with 256-bit keys and HMAC-SHA256) from the `cryptography` package.
 """
 
 import os

@@ -258,8 +258,8 @@ def risk_assessment():
         result = explain_prediction(features)
     except ValueError as exc:
         return _err(str(exc))
-    except FileNotFoundError as exc:
-        return _err(str(exc), 503)
+    except FileNotFoundError:
+        return _err("Model not found. Please contact the administrator.", 503)
     except Exception:
         return _err("Risk assessment failed.", 500)
 
