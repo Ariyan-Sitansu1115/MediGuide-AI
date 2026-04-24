@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# MediGuide AI runtime data
+data/mediguide.db
+data/.encryption_key
+
 # C extensions
 *.so
 

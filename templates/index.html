@@ -3,16 +3,359 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MediGuide AI</title>
+  <title>MediGuide AI — Health Awareness Tool</title>
   <link rel="stylesheet" href="/static/css/styles.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>MediGuide AI</h1>
-    <p>AI-powered healthcare risk assistance API is running.</p>
-    <button id="healthBtn">Check API Health</button>
-    <pre id="output">Click the button to test /api/health</pre>
-  </main>
+
+  <!-- ================================================================
+       DISCLAIMER MODAL (mandatory — blocks the whole app until accepted)
+       ================================================================ -->
+  <div id="disclaimerOverlay" class="overlay" role="dialog" aria-modal="true"
+       aria-labelledby="disclaimerTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-icon">⚕️</span>
+        <h2 id="disclaimerTitle">Medical Disclaimer &amp; Informed Consent</h2>
+      </div>
+      <div class="modal-body">
+        <div class="disclaimer-badge">EDUCATIONAL TOOL ONLY — NOT A MEDICAL DEVICE</div>
+        <div id="disclaimerText" class="disclaimer-scroll"></div>
+        <label class="consent-checkbox">
+          <input type="checkbox" id="consentCheck" />
+          <span>I have read and understood the disclaimer above. I agree to use
+            this tool for educational purposes only and will consult a licensed
+            healthcare professional for medical advice.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button id="acceptBtn" class="btn-primary" disabled>
+          Accept &amp; Continue
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       MAIN APPLICATION
+       ================================================================ -->
+  <div id="appContainer" class="app-hidden">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-brand">
+          <span class="header-icon">🏥</span>
+          <div>
+            <h1>MediGuide AI</h1>
+            <p>Health Awareness &amp; Antibiotic Stewardship Tool</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="privacyBtn" class="btn-ghost">🔒 My Data</button>
+          <span class="session-badge" id="sessionBadge" title="Your anonymous session ID"></span>
+        </div>
+      </div>
+      <div class="disclaimer-bar">
+        ⚕️ EDUCATIONAL ONLY — This is NOT medical advice. Always consult a licensed healthcare professional.
+      </div>
+    </header>
+
+    <main class="main-content">
+
+      <!-- ============================================================
+           EMERGENCY ALERT (hidden until red flags triggered)
+           ============================================================ -->
+      <div id="emergencyAlert" class="emergency-alert emergency-hidden" role="alert">
+        <div class="emergency-header">
+          <span class="emergency-icon">🚨</span>
+          <h2>Emergency Warning Detected</h2>
+        </div>
+        <div id="emergencyRules" class="emergency-rules"></div>
+        <div class="emergency-contacts">
+          <h3>Emergency Contacts</h3>
+          <div class="contact-grid">
+            <a href="tel:911" class="contact-card emergency-call">
+              <span>🆘</span>
+              <strong>911</strong>
+              <small>US Emergency</small>
+            </a>
+            <a href="tel:988" class="contact-card">
+              <span>💙</span>
+              <strong>988</strong>
+              <small>Mental Health Crisis</small>
+            </a>
+            <a href="tel:18002221222" class="contact-card">
+              <span>☠️</span>
+              <strong>1-800-222-1222</strong>
+              <small>Poison Control</small>
+            </a>
+          </div>
+        </div>
+        <p class="emergency-note">
+          ⚠️ Do NOT rely on this educational system in a medical emergency.
+          Call emergency services immediately.
+        </p>
+      </div>
+
+      <!-- ============================================================
+           SYMPTOM FORM
+           ============================================================ -->
+      <section class="card">
+        <div class="card-header">
+          <h2>📋 Symptom Assessment</h2>
+          <p>Report your current symptoms for educational risk stratification.
+             All data is encrypted and stored locally for your session only.</p>
+        </div>
+
+        <form id="symptomForm" novalidate>
+
+          <!-- Core model symptoms -->
+          <fieldset class="symptom-fieldset">
+            <legend>Current Symptoms <span class="required">*</span></legend>
+            <p class="field-hint">Select all that apply. Binary — checked = present.</p>
+            <div class="symptom-grid">
+              <label class="symptom-check">
+                <input type="checkbox" name="fever" value="1" />
+                <span class="symptom-label">🌡️ Fever</span>
+              </label>
+              <label class="symptom-check">
+                <input type="checkbox" name="cough" value="1" />
+                <span class="symptom-label">😮‍💨 Cough</span>
+              </label>
+              <label class="symptom-check">
+                <input type="checkbox" name="throat_pain" value="1" />
+                <span class="symptom-label">🤒 Throat Pain</span>
+              </label>
+              <label class="symptom-check">
+                <input type="checkbox" name="skin_issue" value="1" />
+                <span class="symptom-label">🩹 Skin Issue / Rash</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Red-flag symptom checklist -->
+          <fieldset class="symptom-fieldset redflag-fieldset">
+            <legend>⚠️ Red-Flag Symptoms (check if present)</legend>
+            <p class="field-hint">
+              These symptoms may indicate a medical emergency.
+              If any are present, seek care immediately regardless of our assessment.
+            </p>
+            <div class="symptom-grid">
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_chest_pain" data-rf="chest_pain" />
+                <span class="symptom-label">💔 Chest Pain</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_sob" data-rf="shortness_of_breath" />
+                <span class="symptom-label">😮 Shortness of Breath</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_severe_headache" data-rf="severe_headache" />
+                <span class="symptom-label">🤕 Severe Headache</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_stiff_neck" data-rf="stiff_neck" />
+                <span class="symptom-label">🦴 Stiff Neck</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_loss_consciousness" data-rf="loss_of_consciousness" />
+                <span class="symptom-label">😵 Loss of Consciousness</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_facial_droop" data-rf="facial_drooping" />
+                <span class="symptom-label">😶 Facial Drooping</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_arm_weak" data-rf="arm_weakness" />
+                <span class="symptom-label">💪 Arm Weakness</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_speech" data-rf="speech_difficulty" />
+                <span class="symptom-label">🗣️ Speech Difficulty</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_throat_swell" data-rf="throat_swelling" />
+                <span class="symptom-label">😰 Throat Swelling</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_swallow" data-rf="difficulty_swallowing" />
+                <span class="symptom-label">😶 Difficulty Swallowing</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_high_fever" data-rf="high_fever" />
+                <span class="symptom-label">🔥 High Fever (&gt;104°F / 40°C)</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_confusion" data-rf="confusion" />
+                <span class="symptom-label">🌀 Confusion / Altered Mental Status</span>
+              </label>
+              <label class="symptom-check redflag-check">
+                <input type="checkbox" name="rf_cough_blood" data-rf="coughing_blood" />
+                <span class="symptom-label">🩸 Coughing Blood</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Contextual fields -->
+          <div class="context-fields">
+            <div class="field-group">
+              <label for="severity">Symptom Severity</label>
+              <select id="severity" name="severity">
+                <option value="">Select…</option>
+                <option value="mild">Mild — noticeable but manageable</option>
+                <option value="moderate">Moderate — affecting daily activities</option>
+                <option value="severe">Severe — significant impairment</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="duration">Duration</label>
+              <select id="duration" name="duration">
+                <option value="">Select…</option>
+                <option value="less_than_1_day">Less than 1 day</option>
+                <option value="1-3_days">1–3 days</option>
+                <option value="4-7_days">4–7 days</option>
+                <option value="more_than_1_week">More than 1 week</option>
+              </select>
+            </div>
+            <div class="field-group field-group-full">
+              <label for="context">Additional Context <span class="optional">(optional)</span></label>
+              <textarea id="context" name="context" rows="2"
+                placeholder="e.g. symptoms started after travel, worse at night…"
+                maxlength="300"></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary btn-full" id="submitBtn">
+            🔍 Analyse Symptoms
+          </button>
+          <p class="form-note">
+            By submitting you confirm your earlier consent. All data is encrypted
+            and stored only for your anonymous session.
+          </p>
+
+        </form>
+      </section>
+
+      <!-- ============================================================
+           RESULTS SECTION (hidden until assessment runs)
+           ============================================================ -->
+      <section id="resultsSection" class="card results-hidden">
+        <div class="card-header">
+          <h2>📊 Educational Risk Stratification</h2>
+          <p class="result-subtitle">
+            This is an <strong>educational awareness</strong> output only.
+            It does not constitute a medical diagnosis.
+          </p>
+        </div>
+
+        <!-- Risk tier badge -->
+        <div id="riskBadge" class="risk-badge"></div>
+
+        <!-- Description -->
+        <div id="riskDescription" class="risk-description"></div>
+
+        <!-- Confidence meter -->
+        <div class="confidence-row">
+          <span class="confidence-label">Model Confidence:</span>
+          <div class="confidence-bar-wrap">
+            <div id="confidenceBar" class="confidence-bar"></div>
+          </div>
+          <span id="confidenceValue" class="confidence-value"></span>
+        </div>
+
+        <!-- Feature contributions -->
+        <div id="featuresPanel" class="features-panel">
+          <h3>Contributing Factors</h3>
+          <p class="field-hint">
+            Importance of each reported symptom in the educational pattern analysis.
+          </p>
+          <div id="featuresList" class="features-list"></div>
+        </div>
+
+        <!-- Next steps -->
+        <div id="nextStepsPanel" class="next-steps-panel">
+          <h3>🩺 Suggested Next Steps</h3>
+          <ul id="nextStepsList"></ul>
+        </div>
+
+        <!-- Disclaimer on result -->
+        <div class="result-disclaimer">
+          ⚕️ EDUCATIONAL ONLY — This is NOT medical advice.
+          Always consult a licensed healthcare professional.
+        </div>
+      </section>
+
+      <!-- ============================================================
+           ANTIBIOTIC AWARENESS MODULE
+           ============================================================ -->
+      <section class="card education-card">
+        <div class="card-header">
+          <h2>💊 Antibiotic Awareness</h2>
+        </div>
+        <div class="education-grid">
+          <div class="edu-block viral">
+            <h3>🦠 Viral Infections</h3>
+            <ul>
+              <li>Caused by viruses (cold, flu, COVID-19)</li>
+              <li>Antibiotics <strong>do NOT work</strong> on viruses</li>
+              <li>Usually self-limiting with rest &amp; fluids</li>
+              <li>Examples: common cold, influenza, most sore throats</li>
+            </ul>
+          </div>
+          <div class="edu-block bacterial">
+            <h3>🧫 Bacterial Infections</h3>
+            <ul>
+              <li>Caused by bacteria (strep, some pneumonias)</li>
+              <li>May require antibiotics — <strong>only when prescribed</strong></li>
+              <li>Always complete the full prescribed course</li>
+              <li>Examples: strep throat, bacterial pneumonia, UTIs</li>
+            </ul>
+          </div>
+        </div>
+        <div class="edu-warning">
+          ⚠️ <strong>Antibiotic misuse contributes to antibiotic resistance.</strong>
+          Never take antibiotics without a doctor's prescription.
+          Never share or stop antibiotics early.
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>MediGuide AI — Educational Health Awareness Tool</p>
+      <p>Not a medical device. Not a diagnostic tool. Not a substitute for professional care.</p>
+    </footer>
+
+  </div><!-- /appContainer -->
+
+  <!-- ================================================================
+       PRIVACY DASHBOARD PANEL
+       ================================================================ -->
+  <div id="privacyPanel" class="privacy-panel privacy-hidden" role="dialog"
+       aria-modal="true" aria-labelledby="privacyTitle">
+    <div class="privacy-inner">
+      <div class="privacy-header">
+        <h2 id="privacyTitle">🔒 My Data Dashboard</h2>
+        <button id="closePrivacy" class="btn-ghost" aria-label="Close">&times;</button>
+      </div>
+      <p>Your session data is stored anonymously and encrypted.
+         You have the right to access and delete it at any time.</p>
+
+      <div class="privacy-session">
+        <strong>Your Session ID:</strong>
+        <code id="privacySessionId"></code>
+      </div>
+
+      <div class="privacy-actions">
+        <button id="exportDataBtn" class="btn-secondary">⬇️ Export My Data</button>
+        <button id="deleteDataBtn" class="btn-danger">🗑️ Delete All My Data</button>
+      </div>
+
+      <div id="privacyOutput" class="privacy-output"></div>
+    </div>
+  </div>
 
   <script src="/static/js/app.js"></script>
 </body>
