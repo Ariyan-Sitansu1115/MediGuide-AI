@@ -9,7 +9,7 @@ and audit logs.  Sensitive fields are encrypted at rest using Fernet
 import os
 import sqlite3
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -140,4 +140,4 @@ def new_id() -> str:
 
 def utcnow() -> str:
     """Return the current UTC timestamp as an ISO-8601 string."""
-    return datetime.utcnow().isoformat()
+    return datetime.now(timezone.utc).isoformat()

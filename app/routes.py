@@ -256,8 +256,8 @@ def risk_assessment():
 
     try:
         result = explain_prediction(features)
-    except ValueError as exc:
-        return _err(str(exc))
+    except ValueError:
+        return _err("Invalid feature data. Check that all required fields are present.")
     except FileNotFoundError:
         return _err("Model not found. Please contact the administrator.", 503)
     except Exception:
@@ -332,8 +332,8 @@ def predict():
 
     try:
         prediction = predict_risk(features)
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
+    except ValueError:
+        return jsonify({"error": "Invalid feature data. Check that all required fields are present."}), 400
     except Exception:
         return jsonify({"error": "Prediction failed."}), 500
 
